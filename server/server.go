@@ -197,7 +197,7 @@ func NewServer(globalConfiguration configuration.GlobalConfiguration, provider p
 	server.globalConfiguration = globalConfiguration
 	server.serverEntryPoints = make(map[string]*serverEntryPoint)
 	server.configurationChan = make(chan types.ConfigMessage, 100)
-	server.configurationValidatedChan = make(chan types.ConfigMessage, 100)
+	server.configurationValidatedChan = make(chan types.ConfigMessage)
 	server.signals = make(chan os.Signal, 1)
 	server.stopChan = make(chan bool, 1)
 	server.configureSignals()

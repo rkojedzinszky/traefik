@@ -24,7 +24,6 @@ import (
 	traefiktls "github.com/containous/traefik/tls"
 	"github.com/containous/traefik/tls/generate"
 	"github.com/containous/traefik/types"
-	"github.com/eapache/channels"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/negroni"
 	"github.com/vulcand/oxy/forward"
@@ -438,35 +437,69 @@ func (s *Server) listenConfigurations(stop chan bool) {
 // Note that in the case it receives N new configs in the timeframe of the throttle duration after publishing,
 // it will publish the last of the newly received configurations.
 func (s *Server) throttleProviderConfigReload(throttle time.Duration, publish chan<- types.ConfigMessage, in <-chan types.ConfigMessage, stop chan bool) {
-	ring := channels.NewRingChannel(1)
-	defer ring.Close()
+	nextSend := time.NewTimer(0)
+	defer func() {
+		if !nextSend.Stop() {
+			<-nextSend.C
+		}
+	}()
 
-	s.routinesPool.Go(func(stop chan bool) {
+	var previousConfig types.ConfigMessage
+	// Endless loop
+	for {
+		var nextConfig types.ConfigMessage
+		var ok bool
+
+		// Read all configs during throttle duration
+	Read:
 		for {
 			select {
 			case <-stop:
 				return
-			case nextConfig := <-ring.Out():
-				if config, ok := nextConfig.(types.ConfigMessage); ok {
-					publish <- config
-					time.Sleep(throttle)
+			case nextConfig, ok = <-in:
+				if !ok {
+					return
+				}
+			case <-nextSend.C:
+				break Read
+			}
+		}
+
+		// If still no data, wait for one
+		if !ok {
+			select {
+			case <-stop:
+				return
+			case nextConfig, ok = <-in:
+				if !ok {
+					return
 				}
 			}
 		}
-	})
 
-	var previousConfig types.ConfigMessage
-	for {
-		select {
-		case <-stop:
-			return
-		case nextConfig := <-in:
+		// Try to send only if the to-be-sent configuration is different than
+		// last one.
+		// Meanwhile if another arrives, then try to process that
+	Send:
+		for {
 			if reflect.DeepEqual(previousConfig, nextConfig) {
-				log.Infof("Skipping same configuration for provider %s", nextConfig.ProviderName)
-				continue
+				log.Infof("Skipping same configuration for provider %s", previousConfig.ProviderName)
+				nextSend.Reset(0)
+				break Send
 			}
-			previousConfig = nextConfig
-			ring.In() <- nextConfig
+
+			select {
+			case <-stop:
+				return
+			case nextConfig, ok = <-in:
+				if !ok {
+					return
+				}
+			case publish <- nextConfig:
+				nextSend.Reset(throttle)
+				previousConfig = nextConfig
+				break Send
+			}
 		}
 	}
 }
