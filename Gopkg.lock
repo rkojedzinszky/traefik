@@ -951,7 +951,7 @@
   version = "v3.2.0"
 
 [[projects]]
-  digest = "1:b518b9be1fc76244e246afe09113e3dd6246073b444787d30883877b82a0b90d"
+  digest = "1:12d0e1c90b8ac588d97e90b642d065af77b749436ad9bd3b80c05566ae17d272"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -960,8 +960,8 @@
     "sortkeys",
   ]
   pruneopts = "NUT"
-  revision = "909568be09de550ed094403c2bf8a261b5bb730a"
-  version = "v0.3"
+  revision = "5628607bb4c51c3157aacc3a50f0ab707582b805"
+  version = "v1.3.1"
 
 [[projects]]
   digest = "1:78b8040ece2ff622580def2708b9eb0b2857711b6744c475439bf337e9c677ea"
@@ -1288,12 +1288,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
   digest = "1:ad2a63b2d6dfe7d66bf14c01f1171a3951abef6e0fb136170359c3f7c4f51615"
   name = "github.com/labbsr0x/goh"
   packages = ["gohclient"]
   pruneopts = "NUT"
-  revision = "94bcf1cb07b70b26b72ad54b2b050bcd0a66a9c8"
+  revision = "b1072e96a179ebd4e11c1a64123a43213099be81"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
