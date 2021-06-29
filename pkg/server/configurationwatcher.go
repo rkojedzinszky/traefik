@@ -60,16 +60,10 @@ func NewConfigurationWatcher(
 }
 
 // Start the configuration watcher.
-func (c *ConfigurationWatcher) Start() {
+func (c *ConfigurationWatcher) start() {
 	c.routinesPool.GoCtx(c.receiveConfigurations)
 	c.routinesPool.GoCtx(c.receiveThrottledConfigurations)
 	c.startProvider()
-}
-
-// Stop the configuration watcher.
-func (c *ConfigurationWatcher) Stop() {
-	close(c.allProvidersConfigs)
-	close(c.throttledConfigs)
 }
 
 // AddListener adds a new listener function used when new configuration is provided.
@@ -106,9 +100,6 @@ func (c *ConfigurationWatcher) receiveConfigurations(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			for _, channel := range c.configByProvider {
-				channel.Close()
-			}
 			return
 		case configMsg, ok := <-c.allProvidersConfigs:
 			if !ok {
@@ -225,7 +216,6 @@ func (c *ConfigurationWatcher) throttleProviderConfigReload(ctx context.Context,
 	for {
 		select {
 		case <-ctx.Done():
-			close(c.throttledConfigs)
 			return
 		case nextConfig := <-providerConfig.Out():
 			if config, ok := nextConfig.(dynamic.Message); ok {
